@@ -7,10 +7,17 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
-import {updateUserStart, updateUserSuccess, updateUserFailure} from '../Store/User/UserSlice'
+import {
+  updateUserStart,
+  updateUserSuccess,
+  updateUserFailure,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+} from "../Store/User/UserSlice";
 
 export default function Profile() {
-  const { currentUser, loading, error} = useSelector((state) => state.user);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
@@ -49,24 +56,24 @@ export default function Profile() {
     );
   };
 
-  const handleChange = (e)=>{
-    setFormData({...formData, [e.target.id]: e.target.value})
-  }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
-        method: 'POST',
-        headers:{
-          'Content-Type': 'application/json',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
-      if(data.success === false){
+      if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
       }
@@ -76,7 +83,24 @@ export default function Profile() {
     } catch (error) {
       dispatch(updateUserFailure(error.message));
     }
-  }
+  };
+
+  const handleDelete = async () => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if(data.success === false){
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+      dispatch(deleteUserSuccess(data));
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
+    }
+  };
 
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -131,17 +155,24 @@ export default function Profile() {
           id="password"
           onChange={handleChange}
         />
-        <button disabled = {loading} className="bg-slate-700 p-3 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80">
-          {loading?('Loading...'):'Button'}
+        <button
+          disabled={loading}
+          className="bg-slate-700 p-3 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
+        >
+          {loading ? "Loading..." : "Button"}
         </button>
       </form>
 
       <div className="flex justify-between mt-3">
-        <span className="text-red-700 cursor-pointer">Delete Account</span>
+        <span onClick={handleDelete} className="text-red-700 cursor-pointer">
+          Delete Account
+        </span>
         <span className="text-red-700 cursor-pointer">Sign Out</span>
       </div>
-      <p className="text-red-700 mt-5">{error?error:''}</p>
-      <p className="text-green-700 mt-5">{updateSuccess?"Update Success":""}</p>
+      <p className="text-red-700 mt-5">{error ? error : ""}</p>
+      <p className="text-green-700 mt-5">
+        {updateSuccess ? "Update Success" : ""}
+      </p>
     </div>
   );
 }
