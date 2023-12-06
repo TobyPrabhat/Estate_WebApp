@@ -29,6 +29,8 @@ export default function Profile() {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [showListingError, setShowListingError] = useState(false);
+  const [showListings, setShowListings] = useState([]);
 
   useEffect(() => {
     if (file) {
@@ -121,6 +123,22 @@ export default function Profile() {
     }
   }
 
+  const handleShowListing = async () => {
+    try {
+      setShowListingError(false);
+      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const data = await res.json();
+      if(data.success === false){
+        setShowListingError(true);
+        return;
+      }
+      setShowListings(data);
+
+    } catch (error) {
+      setShowListingError(true);
+    }
+  }
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -195,6 +213,26 @@ export default function Profile() {
       <p className="text-green-700 mt-5">
         {updateSuccess ? "Update Success" : ""}
       </p>
+      <button className="text-green-700 w-full" onClick={handleShowListing}>Show Listings</button>
+      <p className="text-red-600 mt-5">{showListingError?"Error in Showing Listing":""}</p>
+
+      {showListings && showListings.length>0 &&
+      showListings.map((listings) =>(
+        <div key={listings._id} className="border rounded-lg p-3 flex justify-between items-center gap-4">
+          <Link to={`listing/${listings._id}`}>
+            <img src={listings.imageUrls[0]} alt="listing cover" className="h-16 w-16 object-contain"/>
+          </Link>
+          <Link className="text-slate-700 font-semibold truncate flex-1 hover:underline" to={`listing/${listings._id}`}>
+            <p>{listings.name}</p>
+          </Link>
+          <div className="flex flex-col items-center">
+            <button className="text-red-700 uppercase">Delete</button>
+            <button className="text-green-700 uppercase">Edit</button>
+          </div>
+        </div>
+      ))
+      }
     </div>
   );
 }
+ 
